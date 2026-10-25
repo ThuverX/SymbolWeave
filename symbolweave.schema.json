@@ -1,0 +1,428 @@
+{
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+        "version": {
+            "type": "integer",
+            "const": 1
+        },
+        "ghidraJar": {
+            "type": "string"
+        },
+        "pluginJars": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "inputs": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "executable": {
+                        "type": "string"
+                    },
+                    "xml": {
+                        "type": "string"
+                    },
+                    "projectName": {
+                        "type": "string"
+                    },
+                    "workspace": {
+                        "type": "string"
+                    },
+                    "managedCache": {
+                        "type": "boolean"
+                    },
+                    "programFolder": {
+                        "type": "string"
+                    },
+                    "programName": {
+                        "type": "string"
+                    },
+                    "language": {
+                        "type": "string"
+                    },
+                    "compiler": {
+                        "type": "string"
+                    },
+                    "loader": {
+                        "type": "string"
+                    },
+                    "loaderOptions": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "string"
+                        }
+                    },
+                    "analyzers": {
+                        "type": "object",
+                        "additionalProperties": {}
+                    },
+                    "scripts": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "name": {
+                                    "type": "string"
+                                },
+                                "args": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                }
+                            },
+                            "required": [
+                                "name"
+                            ]
+                        }
+                    },
+                    "extractors": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "plugin": {
+                                    "type": "string"
+                                },
+                                "options": {}
+                            }
+                        }
+                    }
+                },
+                "required": [
+                    "id",
+                    "xml"
+                ]
+            }
+        },
+        "matching": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "source": {
+                        "type": "string"
+                    },
+                    "target": {
+                        "type": "string"
+                    },
+                    "plugin": {
+                        "type": "string"
+                    },
+                    "options": {}
+                },
+                "required": [
+                    "source",
+                    "target",
+                    "plugin"
+                ]
+            }
+        },
+        "merge": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "sources": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "patches": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                            "directory": {
+                                "type": "string"
+                            },
+                            "glob": {
+                                "type": "string"
+                            },
+                            "recursive": {
+                                "type": "boolean"
+                            },
+                            "required": {
+                                "type": "boolean"
+                            },
+                            "order": {
+                                "type": "string"
+                            },
+                            "files": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "headerFromFilename": {
+                                "type": "boolean"
+                            },
+                            "policy": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                    "defaultPolicy": {
+                                        "type": "string"
+                                    },
+                                    "duplicateFunctions": {
+                                        "type": "string"
+                                    },
+                                    "respectOmitted": {
+                                        "type": "boolean"
+                                    },
+                                    "fields": {
+                                        "type": "object",
+                                        "additionalProperties": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "classKey": {
+                    "type": "string"
+                },
+                "functionKey": {
+                    "type": "string"
+                },
+                "memberKey": {
+                    "type": "string"
+                },
+                "duplicateFunctions": {
+                    "type": "string"
+                },
+                "defaultPolicy": {
+                    "type": "string"
+                },
+                "fields": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "sourcePolicies": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                            "defaultPolicy": {
+                                "type": "string"
+                            },
+                            "duplicateFunctions": {
+                                "type": "string"
+                            },
+                            "respectOmitted": {
+                                "type": "boolean"
+                            },
+                            "fields": {
+                                "type": "object",
+                                "additionalProperties": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                },
+                "backfillDeclarations": {
+                    "type": "boolean"
+                },
+                "synchronizePrimary": {
+                    "type": "boolean"
+                },
+                "synchronizeSecondary": {
+                    "type": "boolean"
+                },
+                "respectOmitted": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "outputs": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "executable": {
+                    "type": "string"
+                },
+                "xml": {
+                    "type": "string"
+                },
+                "headers": {
+                    "type": "string"
+                },
+                "supportHeaders": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "signatures": {
+                    "type": "boolean"
+                },
+                "pdb": {
+                    "type": "boolean"
+                },
+                "signatureDirectory": {
+                    "type": "string"
+                },
+                "pdbDirectory": {
+                    "type": "string"
+                },
+                "pdbModule": {
+                    "type": "string"
+                },
+                "signatureLabel": {
+                    "type": "string"
+                },
+                "generatedFor": {
+                    "type": "string"
+                },
+                "importerCategory": {
+                    "type": "string"
+                },
+                "dependencies": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                            "typeRegex": {
+                                "type": "string"
+                            },
+                            "bodyRegex": {
+                                "type": "string"
+                            },
+                            "header": {
+                                "type": "string"
+                            },
+                            "removeForward": {
+                                "type": "boolean"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "checker": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "directory": {
+                    "type": "string"
+                },
+                "workers": {
+                    "type": "integer"
+                },
+                "timeoutSeconds": {
+                    "type": "integer"
+                },
+                "vcvars": {
+                    "type": "string"
+                },
+                "typeReplacements": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "opaqueNamespaces": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "removeIncludeRegex": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "bsim": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "target": {
+                    "type": "string"
+                },
+                "database": {
+                    "type": "string"
+                },
+                "databaseName": {
+                    "type": "string"
+                },
+                "template": {
+                    "type": "string"
+                },
+                "trackCallgraph": {
+                    "type": "boolean"
+                },
+                "maxMatches": {
+                    "type": "integer"
+                },
+                "similarity": {
+                    "type": "number"
+                },
+                "significance": {
+                    "type": "number"
+                },
+                "excludeExternal": {
+                    "type": "boolean"
+                },
+                "excludeLibrary": {
+                    "type": "boolean"
+                },
+                "minReferences": {
+                    "type": "integer"
+                },
+                "mapInput": {
+                    "type": "string"
+                },
+                "excludeUnitRegex": {
+                    "type": "string"
+                },
+                "output": {
+                    "type": "string"
+                },
+                "sortBy": {
+                    "type": "string"
+                }
+            }
+        },
+        "analyze": {
+            "type": "boolean"
+        },
+        "$schema": {
+            "type": "string"
+        }
+    },
+    "required": [
+        "version",
+        "inputs"
+    ],
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "SymbolWeave project configuration",
+    "description": "Analysis, matching, merging, and SDK generation settings for SymbolWeave."
+}

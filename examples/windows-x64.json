@@ -1,0 +1,32 @@
+{
+    "$schema": "../symbolweave.schema.json",
+    "version": 1,
+    "ghidraJar": "${GHIDRA_JAR}",
+    "inputs": [
+        {
+            "id": "target",
+            "executable": "../inputs/target.exe",
+            "xml": "../build/metadata/target.xml",
+            "extractors": [
+                {
+                    "plugin": "functions"
+                }
+            ],
+            "workspace": "../.cache/target",
+            "language": "x86:LE:64:default",
+            "compiler": "windows"
+        }
+    ],
+    "merge": {
+        "sources": [
+            "target"
+        ]
+    },
+    "outputs": {
+        "executable": "target",
+        "xml": "../build/metadata/merged.xml",
+        "headers": "../build/include",
+        "signatureDirectory": "../build",
+        "pdbDirectory": "../build"
+    }
+}

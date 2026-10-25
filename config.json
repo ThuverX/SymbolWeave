@@ -1,0 +1,27 @@
+{
+    "$schema": "symbolweave.schema.json",
+    "version": 1,
+    "ghidraJar": "${GHIDRA_JAR}",
+    "inputs": [
+        {
+            "id": "target",
+            "executable": "inputs/target.exe",
+            "xml": "build/metadata/target.xml",
+            "extractors": [
+                {
+                    "plugin": "functions"
+                }
+            ]
+        }
+    ],
+    "merge": {
+        "sources": [
+            "target"
+        ]
+    },
+    "outputs": {
+        "executable": "target",
+        "xml": "build/metadata/merged.xml",
+        "headers": "build/include"
+    }
+}

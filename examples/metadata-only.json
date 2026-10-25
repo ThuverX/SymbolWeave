@@ -1,0 +1,21 @@
+{
+    "$schema": "../symbolweave.schema.json",
+    "version": 1,
+    "ghidraJar": "${GHIDRA_JAR}",
+    "analyze": false,
+    "inputs": [
+        {
+            "id": "metadata",
+            "xml": "../metadata/input.xml"
+        }
+    ],
+    "merge": {
+        "sources": [
+            "metadata"
+        ]
+    },
+    "outputs": {
+        "xml": "../build/metadata/merged.xml",
+        "headers": "../build/include"
+    }
+}

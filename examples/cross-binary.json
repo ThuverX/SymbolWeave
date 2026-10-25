@@ -1,0 +1,102 @@
+{
+    "$schema": "../symbolweave.schema.json",
+    "version": 1,
+    "ghidraJar": "${GHIDRA_JAR}",
+    "inputs": [
+        {
+            "id": "reference",
+            "executable": "../inputs/reference.elf",
+            "xml": "../build/metadata/reference.xml",
+            "workspace": "../.cache/reference",
+            "language": "PowerPC:BE:32:default",
+            "compiler": "default",
+            "extractors": [
+                {
+                    "plugin": "map",
+                    "options": {
+                        "file": "../inputs/reference.map",
+                        "lineFilter": "[0-9a-fA-F].*",
+                        "lineRegex": "(?<Address>[0-9a-fA-F]+)\\s+(?<Size>[0-9a-fA-F]+)\\s+(?<Name>\\S+)\\s+(?<Unit>.+)",
+                        "fields": {
+                            "address": "Address",
+                            "size": "Size",
+                            "name": "Name",
+                            "unit": "Unit"
+                        },
+                        "radix": 16,
+                        "demanglerClass": "gamecubeloader.common.CodeWarriorDemangler",
+                        "vtableRegex": "^__vt__",
+                        "pointerSize": 4,
+                        "headerSlots": 2
+                    }
+                }
+            ]
+        },
+        {
+            "id": "target",
+            "executable": "../inputs/target.exe",
+            "xml": "../build/metadata/target.xml",
+            "workspace": "../.cache/target",
+            "language": "x86:LE:64:default",
+            "compiler": "windows",
+            "scripts": [
+                {
+                    "name": "RunRttiAnalyzerScript.java"
+                }
+            ],
+            "extractors": [
+                {
+                    "plugin": "rtti"
+                }
+            ]
+        }
+    ],
+    "matching": [
+        {
+            "source": "reference",
+            "target": "target",
+            "plugin": "declarations",
+            "options": {
+                "secondaryHeaderSlots": 2,
+                "fields": {
+                    "name": "$source.name",
+                    "parameters": "$source.parameters",
+                    "address": "$target.address",
+                    "implementationAddress": "$target.implementationAddress"
+                }
+            }
+        }
+    ],
+    "merge": {
+        "sources": [
+            "target"
+        ],
+        "fields": {
+            "function.address": "nonempty"
+        },
+        "sourcePolicies": {
+            "target": {
+                "fields": {
+                    "function.callingConvention": "keep"
+                }
+            }
+        }
+    },
+    "outputs": {
+        "executable": "target",
+        "xml": "../build/metadata/merged.xml",
+        "headers": "../build/include",
+        "signatureDirectory": "../build",
+        "pdbDirectory": "../build"
+    },
+    "bsim": {
+        "enabled": false,
+        "source": "reference",
+        "target": "target",
+        "database": "../.cache/bsim/database",
+        "output": "../build/metadata/bsim.xml"
+    },
+    "checker": {
+        "directory": "../.cache/vtable-check"
+    }
+}

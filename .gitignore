@@ -1,0 +1,44 @@
+# Build products and generated metadata
+/out/
+/build/
+/.cache/
+/cache/
+/output/
+/sdk/
+/.vtable-check/
+
+# Local project inputs and overrides
+/inputs/
+/source/
+/patches/
+/config.local.json
+
+# Executables, analysis databases, and compiled files
+*.exe
+*.dll
+*.elf
+*.dol
+*.map
+*.pdb
+*.class
+*.jar
+*.obj
+*.lib
+*.gpr
+*.rep/
+*.mv.db
+*.log
+
+# Editor and operating-system files
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+.DS_Store
+Thumbs.db
+
+tools
+# Local convenience scripts
+/run.bat
