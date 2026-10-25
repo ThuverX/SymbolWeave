@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
 
-/** Minimal, dependency-free PE32+ reader used by the signature generator. */
+/** Minimal, dependency-free PE reader. Signature generation requires AMD64 PE32+. */
 public final class PortableExecutable {
     public static final int IMAGE_SCN_MEM_EXECUTE = 0x20000000;
     private static final int IMAGE_DIRECTORY_ENTRY_RESOURCE = 2;
@@ -42,6 +42,7 @@ public final class PortableExecutable {
     private final long timestamp;
     private final long sizeOfImage;
     private final int machine;
+    private final int pointerSize;
     private final List<Section> sections;
     private final long resourceRva;
     private final long resourceSize;
@@ -56,6 +57,7 @@ public final class PortableExecutable {
             long timestamp,
             long sizeOfImage,
             int machine,
+            int pointerSize,
             List<Section> sections,
             long resourceRva,
             long resourceSize,
@@ -68,6 +70,7 @@ public final class PortableExecutable {
         this.timestamp = timestamp;
         this.sizeOfImage = sizeOfImage;
         this.machine = machine;
+        this.pointerSize = pointerSize;
         this.sections = List.copyOf(sections);
         this.resourceRva = resourceRva;
         this.resourceSize = resourceSize;
@@ -78,6 +81,14 @@ public final class PortableExecutable {
     }
 
     public static PortableExecutable read(Path path) throws IOException {
+        PortableExecutable image = readImage(path);
+        if (image.pointerSize != 8 || image.machine != 0x8664)
+            throw new IOException(path + " is not an AMD64 PE32+ executable");
+        return image;
+    }
+
+    /** Read PE32 or PE32+ without enabling unsupported signature decoders. */
+    public static PortableExecutable readImage(Path path) throws IOException {
         byte[] bytes = Files.readAllBytes(path);
         if (bytes.length < 0x40 || u16(bytes, 0) != 0x5A4D) {
             throw new IOException(path + " is not a DOS/PE executable");
@@ -95,21 +106,26 @@ public final class PortableExecutable {
         int optionalSize = u16(bytes, coff + 16);
         int optional = coff + 20;
         require(bytes, optional, optionalSize);
-        if (u16(bytes, optional) != 0x20B) {
-            throw new IOException(path + " is not a PE32+ executable");
-        }
-        if (machine != 0x8664) {
-            throw new IOException(
-                    path
-                            + " is not an AMD64 executable (machine=0x"
-                            + Integer.toHexString(machine)
-                            + ")");
-        }
-
-        long imageBase = i64(bytes, optional + 24);
+        int magic = u16(bytes, optional);
+        int pointerSize =
+                switch (magic) {
+                    case 0x10B -> 4;
+                    case 0x20B -> 8;
+                    default ->
+                            throw new IOException(
+                                    path + " has unsupported PE optional header magic");
+                };
+        int directoryOffset = pointerSize == 4 ? 96 : 112;
+        if (optionalSize < directoryOffset)
+            throw new IOException(path + " has a truncated PE optional header");
+        long imageBase = pointerSize == 4 ? u32(bytes, optional + 28) : i64(bytes, optional + 24);
         long sizeOfImage = u32(bytes, optional + 56);
         int directoryCount =
-                checkedInt(Math.min(u32(bytes, optional + 108), 16), "data directory count");
+                checkedInt(
+                        Math.min(u32(bytes, optional + directoryOffset - 4), 16),
+                        "data directory count");
+        if (directoryCount > (optionalSize - directoryOffset) / 8)
+            throw new IOException(path + " has truncated PE data directories");
         long resourceRva = 0;
         long resourceSize = 0;
         long relocationRva = 0;
@@ -117,17 +133,17 @@ public final class PortableExecutable {
         long debugRva = 0;
         long debugSize = 0;
         if (directoryCount > IMAGE_DIRECTORY_ENTRY_RESOURCE) {
-            int entry = optional + 112 + IMAGE_DIRECTORY_ENTRY_RESOURCE * 8;
+            int entry = optional + directoryOffset + IMAGE_DIRECTORY_ENTRY_RESOURCE * 8;
             resourceRva = u32(bytes, entry);
             resourceSize = u32(bytes, entry + 4);
         }
         if (directoryCount > IMAGE_DIRECTORY_ENTRY_BASERELOC) {
-            int entry = optional + 112 + IMAGE_DIRECTORY_ENTRY_BASERELOC * 8;
+            int entry = optional + directoryOffset + IMAGE_DIRECTORY_ENTRY_BASERELOC * 8;
             relocationRva = u32(bytes, entry);
             relocationSize = u32(bytes, entry + 4);
         }
         if (directoryCount > IMAGE_DIRECTORY_ENTRY_DEBUG) {
-            int entry = optional + 112 + IMAGE_DIRECTORY_ENTRY_DEBUG * 8;
+            int entry = optional + directoryOffset + IMAGE_DIRECTORY_ENTRY_DEBUG * 8;
             debugRva = u32(bytes, entry);
             debugSize = u32(bytes, entry + 4);
         }
@@ -165,6 +181,7 @@ public final class PortableExecutable {
                 timestamp,
                 sizeOfImage,
                 machine,
+                pointerSize,
                 sections,
                 resourceRva,
                 resourceSize,
@@ -294,6 +311,23 @@ public final class PortableExecutable {
                                                 < section.virtualAddress()
                                                         + Integer.toUnsignedLong(
                                                                 section.rawSize()));
+    }
+
+    public int pointerSize() {
+        return pointerSize;
+    }
+
+    /** Read a complete pointer from file-backed section bytes, never across a section boundary. */
+    public long readPointerAtVa(long virtualAddress) throws IOException {
+        long rva = vaToRva(virtualAddress);
+        for (Section section : sections) {
+            long delta = rva - section.virtualAddress();
+            if (delta < 0 || delta > (long) section.rawSize() - pointerSize) continue;
+            int offset = Math.toIntExact((long) section.rawOffset() + delta);
+            require(bytes, offset, pointerSize);
+            return pointerSize == 4 ? u32(bytes, offset) : i64(bytes, offset);
+        }
+        throw new IOException("unmapped vtable pointer at " + hex(virtualAddress));
     }
 
     public long readLongAtVa(long virtualAddress) throws IOException {

@@ -516,6 +516,7 @@ public class DataXMLSerializer {
 
     private static boolean hasFunctionData(Element element) {
         return element.getAttribute("address") != null
+                || element.getAttribute("implementationAddress") != null
                 || element.getAttribute("name") != null
                 || element.getAttribute("callingConvention") != null
                 || child(element, "ReturnType") != null

@@ -185,6 +185,9 @@
                                     "stripAddresses": {
                                         "type": "boolean"
                                     },
+                                    "resolveVirtualFunctionAddressesFrom": {
+                                        "type": "string"
+                                    },
                                     "fields": {
                                         "type": "object",
                                         "additionalProperties": {
@@ -235,6 +238,9 @@
                             "stripAddresses": {
                                 "type": "boolean"
                             },
+                            "resolveVirtualFunctionAddressesFrom": {
+                                "type": "string"
+                            },
                             "fields": {
                                 "type": "object",
                                 "additionalProperties": {
@@ -258,6 +264,9 @@
                 },
                 "stripAddresses": {
                     "type": "boolean"
+                },
+                "resolveVirtualFunctionAddressesFrom": {
+                    "type": "string"
                 }
             }
         },

@@ -115,7 +115,31 @@ final class GenerationPipeline {
                 }
                 layers.add(new ConfigurableMerger.Layer(data, true, patch.policy));
             }
-        return ConfigurableMerger.merge(layers, config.merge);
+        Map<String, PortableExecutable> images = new HashMap<>();
+        return ConfigurableMerger.merge(
+                layers,
+                config.merge,
+                (merged, settings) -> {
+                    String from = settings.resolveVirtualFunctionAddressesFrom;
+                    if (from == null || from.isBlank()) return;
+                    PortableExecutable image = images.get(from);
+                    if (image == null) {
+                        image =
+                                PortableExecutable.readImage(
+                                        config.path(config.input(from).executable));
+                        images.put(from, image);
+                    }
+                    var resolution = VirtualFunctionAddressResolver.resolve(merged, image);
+                    System.out.println(
+                            "Vtable addresses from "
+                                    + from
+                                    + ": slots="
+                                    + resolution.slots()
+                                    + "; implementations="
+                                    + resolution.implementations()
+                                    + "; unreadable="
+                                    + resolution.unreadable());
+                });
     }
 
     private void writeOutputs(FileContainer merged) throws Exception {

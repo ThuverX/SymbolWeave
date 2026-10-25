@@ -119,12 +119,39 @@ public final class ConfigurableMerger {
                 override.respectOmitted == null ? base.respectOmitted : override.respectOmitted;
         result.stripAddresses =
                 override.stripAddresses == null ? base.stripAddresses : override.stripAddresses;
+        result.resolveVirtualFunctionAddressesFrom =
+                override.resolveVirtualFunctionAddressesFrom == null
+                        ? base.resolveVirtualFunctionAddressesFrom
+                        : override.resolveVirtualFunctionAddressesFrom;
         result.fields.putAll(base.fields);
         result.fields.putAll(override.fields);
         return result;
     }
 
     public static FileContainer merge(List<Layer> layers, ProjectConfig.Merge settings) {
+        try {
+            return merge(
+                    layers,
+                    settings,
+                    (merged, policy) -> {
+                        if (policy.resolveVirtualFunctionAddressesFrom != null
+                                && !policy.resolveVirtualFunctionAddressesFrom.isBlank())
+                            throw new IllegalArgumentException(
+                                    "Virtual address resolution requires an executable resolver");
+                    });
+        } catch (java.io.IOException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    @FunctionalInterface
+    interface LayerResolver {
+        void resolve(FileContainer merged, ProjectConfig.Merge settings) throws java.io.IOException;
+    }
+
+    static FileContainer merge(
+            List<Layer> layers, ProjectConfig.Merge settings, LayerResolver resolver)
+            throws java.io.IOException {
         FileContainer result = new FileContainer("Merged");
         Map<Util.NamespacedString, Set<Integer>> patched = new HashMap<>();
         for (Layer layer : layers) {
@@ -222,6 +249,7 @@ public final class ConfigurableMerger {
                     else mergeFields(old, member, "member", Set.of(), layerSettings);
                 }
             }
+            resolver.resolve(result, layerSettings);
         }
         InheritanceResolver.resolve(result, patched, settings);
         return result;

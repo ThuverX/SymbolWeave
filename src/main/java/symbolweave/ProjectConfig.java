@@ -72,6 +72,7 @@ public final class ProjectConfig {
         public boolean synchronizeSecondary = true;
         public boolean respectOmitted = true;
         public boolean stripAddresses = false;
+        public String resolveVirtualFunctionAddressesFrom;
     }
 
     public static final class Policy {
@@ -79,6 +80,7 @@ public final class ProjectConfig {
         public String duplicateFunctions;
         public Boolean respectOmitted;
         public Boolean stripAddresses;
+        public String resolveVirtualFunctionAddressesFrom;
         public Map<String, String> fields = new LinkedHashMap<>();
     }
 
@@ -267,6 +269,15 @@ public final class ProjectConfig {
             throw new IllegalArgumentException(location + " must be a string");
     }
 
+    private void validateAddressResolution(Merge settings) {
+        String from = settings.resolveVirtualFunctionAddressesFrom;
+        if (from == null || from.isBlank()) return;
+        if (input(from).executable == null)
+            throw new IllegalArgumentException(
+                    "resolveVirtualFunctionAddressesFrom requires an executable path on input "
+                            + from);
+    }
+
     void validate() {
         if (version != 1) throw new IllegalArgumentException("$.version: supported version is 1");
         if (inputs.isEmpty())
@@ -336,6 +347,15 @@ public final class ProjectConfig {
         java.util.regex.Pattern.compile(bsim.excludeUnitRegex);
         checker.typeReplacements.keySet().forEach(java.util.regex.Pattern::compile);
         checker.removeIncludeRegex.forEach(java.util.regex.Pattern::compile);
+        validateAddressResolution(merge);
+        merge.sourcePolicies
+                .values()
+                .forEach(
+                        policy ->
+                                validateAddressResolution(
+                                        ConfigurableMerger.policy(merge, policy)));
+        merge.patches.forEach(
+                patch -> validateAddressResolution(ConfigurableMerger.policy(merge, patch.policy)));
         ConfigurableMerger.validate(merge);
         for (Patch patch : merge.patches)
             if (!List.of("ascending", "descending", "listed").contains(patch.order))

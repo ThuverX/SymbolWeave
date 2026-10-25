@@ -132,7 +132,7 @@ Identity settings are `classKey` (`name`), `functionKey` (`name,address`), and `
 
 `sourcePolicies` maps input IDs to policy overrides, and each patch selection can have a
 `policy` object. These objects accept `defaultPolicy`, `fields`, `duplicateFunctions`,
-`respectOmitted`, and `stripAddresses`; omitted settings inherit the global merge policy. This lets
+`respectOmitted`, `stripAddresses`, and `resolveVirtualFunctionAddressesFrom`; omitted settings inherit the global merge policy. This lets
 analyzed inputs retain existing addresses while a manual patch is allowed to replace them.
 
 `stripAddresses` defaults to false. When true, the incoming layer contributes
@@ -167,6 +167,50 @@ those by name across binaries, choose `functionKey: "name"` and
 `duplicateFunctions: "merge"` when names uniquely identify them. Address stripping
 happens before identity comparison; an address-based key therefore sees zero for
 the stripped source.
+
+`resolveVirtualFunctionAddressesFrom` optionally names the executable input used
+to fill missing virtual-function addresses after this source or patch layer has
+been merged. It is disabled by default; an empty string disables an inherited
+setting. It is a merge policy, available globally, per source, and per patch.
+The referenced input must have an `executable` path. The executable is read directly,
+including with `analyze: false`; no Ghidra import or reanalysis is needed.
+Currently this supports PE32 and PE32+ files, automatically using 4-byte or 8-byte
+little-endian pointers from the executable format.
+
+For each virtual function whose `implementationAddress` is omitted or zero, use its
+existing nonzero `address` as the physical slot address. Otherwise compute the slot
+as `class.vtableAddress + index * pointerSize`. Read the pointer at that virtual
+address and fill `implementationAddress` if the pointer is nonzero; also fill the
+missing slot `address`. Every nonzero implementation is left untouched, including
+manual patch values. Regular and loose functions are unaffected. Resolution sees
+the accumulated merged metadata at this stage and runs before final inheritance
+reconciliation. Later source layers and patches retain their normal precedence.
+
+```json
+{
+  "sources": ["ps2", "pc"],
+  "sourcePolicies": {
+    "ps2": { "stripAddresses": true },
+    "pc": { "resolveVirtualFunctionAddressesFrom": "pc" }
+  },
+  "patches": [
+    {
+      "directory": "patches",
+      "policy": { "resolveVirtualFunctionAddressesFrom": "pc" }
+    }
+  ]
+}
+```
+
+Enable the policy on patches when a patch supplies a previously unknown vtable
+address: source resolution happens before patches, so it cannot use their future
+values. Vtable addresses must point to the first function pointer, after any ABI
+header slots. A missing vtable address leaves the entry unresolved. Flattened
+secondary slots need an explicit physical slot `address` when their `vtableOwner`
+differs from the class; they are not inferred from the primary vtable. Null pointers
+remain zero. Unreadable or truncated slots are reported and left unresolved;
+invalid executable files fail the run. Resolution never removes declarations or
+filters out zero-address functions.
 
 `defaultPolicy` defaults to `nonempty`. `fields` overrides a policy per property:
 
