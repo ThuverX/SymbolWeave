@@ -71,12 +71,14 @@ public final class ProjectConfig {
         public boolean synchronizePrimary = true;
         public boolean synchronizeSecondary = true;
         public boolean respectOmitted = true;
+        public boolean stripAddresses = false;
     }
 
     public static final class Policy {
         public String defaultPolicy;
         public String duplicateFunctions;
         public Boolean respectOmitted;
+        public Boolean stripAddresses;
         public Map<String, String> fields = new LinkedHashMap<>();
     }
 

@@ -117,6 +117,8 @@ public final class ConfigurableMerger {
                         : override.duplicateFunctions;
         result.respectOmitted =
                 override.respectOmitted == null ? base.respectOmitted : override.respectOmitted;
+        result.stripAddresses =
+                override.stripAddresses == null ? base.stripAddresses : override.stripAddresses;
         result.fields.putAll(base.fields);
         result.fields.putAll(override.fields);
         return result;
@@ -127,7 +129,10 @@ public final class ConfigurableMerger {
         Map<Util.NamespacedString, Set<Integer>> patched = new HashMap<>();
         for (Layer layer : layers) {
             ProjectConfig.Merge layerSettings = policy(settings, layer.policy());
-            FileContainer source = layer.container();
+            FileContainer source =
+                    layerSettings.stripAddresses
+                            ? withoutAddresses(layer.container())
+                            : layer.container();
             mergeFunctions(result.getLooseFunctions(), source.getLooseFunctions(), layerSettings);
             for (ClassContainer incoming : source.getClasses()) {
                 if (layer.patch())
@@ -220,6 +225,33 @@ public final class ConfigurableMerger {
         }
         InheritanceResolver.resolve(result, patched, settings);
         return result;
+    }
+
+    /** Remove only incoming binary locations; never mutate an input used by another layer. */
+    private static FileContainer withoutAddresses(FileContainer source) {
+        FileContainer copy = new FileContainer(source.getGeneratedFor());
+        for (FunctionContainer function : source.getLooseFunctions())
+            copy.getLooseFunctions().add(withoutAddresses(function));
+        for (ClassContainer original : source.getClasses()) {
+            ClassContainer cls = copyClass(original);
+            XmlPresence.copy(original, cls);
+            cls.setVtableAddress(0);
+            cls.getVirtualFunctions()
+                    .replaceAll(
+                            (slot, function) ->
+                                    function == null ? null : withoutAddresses(function));
+            cls.getFunctions().replaceAll(ConfigurableMerger::withoutAddresses);
+            cls.getMembers().forEach(member -> member.setAddress(null));
+            copy.getClasses().add(cls);
+        }
+        return copy;
+    }
+
+    private static FunctionContainer withoutAddresses(FunctionContainer source) {
+        FunctionContainer copy = copyFunction(source);
+        copy.setAddress(0);
+        copy.setImplementationAddress(0);
+        return copy;
     }
 
     private static void mergeFunctions(
@@ -334,6 +366,12 @@ public final class ConfigurableMerger {
         for (var property : properties(source.getClass()).entrySet()) {
             String name = property.getKey();
             if (skip.contains(name)) continue;
+            if (settings.stripAddresses
+                    && (kind.equals("class") && name.equals("vtableAddress")
+                            || kind.equals("function")
+                                    && (name.equals("address")
+                                            || name.equals("implementationAddress"))
+                            || kind.equals("member") && name.equals("address"))) continue;
             if (settings.respectOmitted && XmlPresence.omitted(source, name)) continue;
             if (name.equals("pureVirtual")
                     && source instanceof FunctionContainer f

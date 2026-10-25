@@ -132,8 +132,41 @@ Identity settings are `classKey` (`name`), `functionKey` (`name,address`), and `
 
 `sourcePolicies` maps input IDs to policy overrides, and each patch selection can have a
 `policy` object. These objects accept `defaultPolicy`, `fields`, `duplicateFunctions`,
-and `respectOmitted`; omitted settings inherit the global merge policy. This lets
+`respectOmitted`, and `stripAddresses`; omitted settings inherit the global merge policy. This lets
 analyzed inputs retain existing addresses while a manual patch is allowed to replace them.
+
+`stripAddresses` defaults to false. When true, the incoming layer contributes
+no binary addresses: function `address` and `implementationAddress` and class
+`vtableAddress` become zero for new entries, and member `address` becomes absent.
+Existing entries retain their addresses even with `replace` policies or XML `clear`.
+This applies to virtual, class, and loose functions, including entirely new classes
+and slots. Inputs are not modified. Declaration fields, virtual slot indices,
+`vtableCount`, and member offsets/sizes remain available; cross-platform layout and
+calling-convention differences still need matching rules or patches.
+
+For example, merge reference declarations first, then PC metadata, then manual
+patches. Only the reference source discards addresses; PC metadata and patches
+can supply the correct locations:
+
+```json
+{
+  "sources": ["ps2", "pc"],
+  "sourcePolicies": {
+    "ps2": { "stripAddresses": true }
+  },
+  "patches": [
+    { "directory": "patches", "glob": "*.xml" }
+  ]
+}
+```
+
+The option is also accepted globally under `merge` and on each patch's `policy`.
+Per-layer false overrides a global true. Virtual functions merge by slot; loose
+and class functions still use `functionKey` (default `name,address`). To merge
+those by name across binaries, choose `functionKey: "name"` and
+`duplicateFunctions: "merge"` when names uniquely identify them. Address stripping
+happens before identity comparison; an address-based key therefore sees zero for
+the stripped source.
 
 `defaultPolicy` defaults to `nonempty`. `fields` overrides a policy per property:
 
