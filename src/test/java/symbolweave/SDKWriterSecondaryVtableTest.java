@@ -15,6 +15,9 @@ import java.util.List;
 
 public final class SDKWriterSecondaryVtableTest {
     public static void main(String[] args) throws IOException {
+        var config = new ProjectConfig();
+        config.outputs.ignoreX86CallingConventions = true;
+        SDKWriter.configure(config);
         varargsFunctionsIncludeEllipsisInDeclarationAndMetadata();
         primarySlotsUseImplementationIdentityAndParentSignature();
         pureVirtualsGenerateAbstractBasesAndConcreteOverrides();

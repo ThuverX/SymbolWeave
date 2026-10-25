@@ -26,6 +26,7 @@
         "executable": "target",
         "xml": "../build/metadata/merged.xml",
         "headers": "../build/include",
+        "ignoreX86CallingConventions": true,
         "signatureDirectory": "../build",
         "pdbDirectory": "../build"
     }

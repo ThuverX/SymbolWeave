@@ -96,6 +96,7 @@ public final class ProjectConfig {
         public String xml = "build/metadata/merged.xml";
         public String headers = "build/include";
         public List<String> supportHeaders = new ArrayList<>();
+        public boolean ignoreX86CallingConventions = false;
         public boolean signatures = false;
         public boolean pdb = false;
         public String signatureDirectory = "build";

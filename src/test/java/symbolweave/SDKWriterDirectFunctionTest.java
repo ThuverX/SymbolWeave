@@ -8,6 +8,9 @@ import java.util.*;
 /** Generates a fixture exercised by SDKWriterDirectFunctionTest.cpp. */
 public final class SDKWriterDirectFunctionTest {
     public static void main(String[] args) throws Exception {
+        var config = new ProjectConfig();
+        config.outputs.ignoreX86CallingConventions = true;
+        SDKWriter.configure(config);
         Path output =
                 args.length == 0
                         ? Files.createTempDirectory("symbolweave-direct-test-")

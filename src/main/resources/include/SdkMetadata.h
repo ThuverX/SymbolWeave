@@ -20,6 +20,24 @@ static_assert(sizeof(undefined3) == 3);
 static_assert(sizeof(undefined4) == 4);
 static_assert(sizeof(undefined8) == 8);
 
+// x86 conventions have no effect on targets with a unified calling convention.
+#if defined(_MSC_VER) && defined(_M_IX86)
+#define SDK_CDECL __cdecl
+#define SDK_STDCALL __stdcall
+#define SDK_THISCALL __thiscall
+#define SDK_FASTCALL __fastcall
+#elif defined(__i386__) && (defined(__GNUC__) || defined(__clang__))
+#define SDK_CDECL __attribute__((cdecl))
+#define SDK_STDCALL __attribute__((stdcall))
+#define SDK_THISCALL __attribute__((thiscall))
+#define SDK_FASTCALL __attribute__((fastcall))
+#else
+#define SDK_CDECL
+#define SDK_STDCALL
+#define SDK_THISCALL
+#define SDK_FASTCALL
+#endif
+
 #define SDK_DETAIL_UNPAREN(...) __VA_ARGS__
 
 #ifndef SDK_REBASE_ADDRESS
@@ -38,10 +56,30 @@ namespace SDKDetail
     struct VirtualFunctionTraits;
 
     template<typename TReturn, typename TReceiver, typename... TArguments>
-    struct VirtualFunctionTraits<TReturn (*)(TReceiver*, TArguments...)>
+    struct VirtualFunctionTraits<TReturn (SDK_CDECL *)(TReceiver*, TArguments...)>
     {
         using TReceiverType = std::remove_cv_t<TReceiver>;
     };
+
+    template<typename TReturn, typename TReceiver, typename... TArguments>
+    struct VirtualFunctionTraits<TReturn (SDK_CDECL *)(TReceiver*, TArguments..., ...)>
+    {
+        using TReceiverType = std::remove_cv_t<TReceiver>;
+    };
+
+#if (defined(_MSC_VER) && defined(_M_IX86)) || \
+    (defined(__i386__) && (defined(__GNUC__) || defined(__clang__)))
+#define SDK_DETAIL_RECEIVER_TRAITS(Convention) \
+    template<typename TReturn, typename TReceiver, typename... TArguments> \
+    struct VirtualFunctionTraits<TReturn (Convention *)(TReceiver*, TArguments...)> \
+    { \
+        using TReceiverType = std::remove_cv_t<TReceiver>; \
+    };
+    SDK_DETAIL_RECEIVER_TRAITS(SDK_STDCALL)
+    SDK_DETAIL_RECEIVER_TRAITS(SDK_THISCALL)
+    SDK_DETAIL_RECEIVER_TRAITS(SDK_FASTCALL)
+#undef SDK_DETAIL_RECEIVER_TRAITS
+#endif
 }
 
 #define SDK_DIRECT_FUNCTION(MetadataName, Owner, Function, Address, Signature)  \

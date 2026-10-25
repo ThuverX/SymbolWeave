@@ -271,6 +271,9 @@
                         "type": "string"
                     }
                 },
+                "ignoreX86CallingConventions": {
+                    "type": "boolean"
+                },
                 "signatures": {
                     "type": "boolean"
                 },

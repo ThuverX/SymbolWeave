@@ -19,6 +19,18 @@ public final class ProjectConfigTest {
         ProjectConfig c = ProjectConfig.load(config);
         equal(root.resolve("data.xml"), c.path("data.xml"));
         equal(List.of("one"), c.merge.sources);
+        equal(false, c.outputs.ignoreX86CallingConventions);
+        Files.writeString(
+                config,
+                "{\"version\":1,\"inputs\":[{\"id\":\"one\",\"xml\":\"data.xml\"}],"
+                        + "\"outputs\":{\"ignoreX86CallingConventions\":true}}");
+        equal(true, ProjectConfig.load(config).outputs.ignoreX86CallingConventions);
+        rejects(
+                config,
+                "{\"version\":1,\"outputs\":{\"ignoreX86CallingConventions\":\"true\"}}",
+                "boolean");
+        Files.writeString(
+                config, "{\"version\":1,\"inputs\":[{\"id\":\"one\",\"xml\":\"data.xml\"}]}");
         Path closer = root.resolve("nested/config.json");
         Files.copy(config, closer);
         equal(closer, ProjectConfig.discover(nested));

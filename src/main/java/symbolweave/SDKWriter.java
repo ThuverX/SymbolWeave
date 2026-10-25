@@ -26,9 +26,11 @@ import java.util.TreeSet;
 public class SDKWriter {
 
     private static List<ProjectConfig.Dependency> dependencyRules = List.of();
+    private static boolean ignoreX86CallingConventions;
 
     public static void configure(ProjectConfig config) {
         dependencyRules = List.copyOf(config.outputs.dependencies);
+        ignoreX86CallingConventions = config.outputs.ignoreX86CallingConventions;
     }
 
     private static void bodyDependencies(String body, Set<String> imports) {
@@ -1084,20 +1086,10 @@ public class SDKWriter {
         s.append(vtableIndex);
         s.append(", (");
 
-        s.append(" " + formatTypeContainer(fc.getReturnType()));
+        s.append(" ");
+        appendFunctionPointerSignature(s, fc, receiverName, true);
 
-        s.append(" (*)(");
-
-        s.append(receiverName);
-        s.append("*");
-
-        // Explicit parameters
-        for (ParameterContainer pc : explicitParameters(fc)) {
-            s.append(", ");
-            s.append(formatTypeContainer(pc.getType()));
-        }
-
-        s.append(")));");
+        s.append("));");
 
         return s.toString();
     }
@@ -1131,7 +1123,7 @@ public class SDKWriter {
         if (fc.getName().getName().startsWith("~")) functionName = "~" + className;
         if (!fc.getName().getName().startsWith("~") && !isConstructor)
             s.append(formatTypeContainer(fc.getReturnType())).append(" ");
-        s.append(functionName);
+        s.append(callingConvention(fc)).append(functionName);
         s.append("(");
         List<ParameterContainer> parameters = explicitParameters(fc);
         for (int i = 0; i < parameters.size(); i++) {
@@ -1183,12 +1175,25 @@ public class SDKWriter {
         return s.toString();
     }
 
+    private static String callingConvention(FunctionContainer function) {
+        if (ignoreX86CallingConventions) return "";
+        // Variadic native functions use caller cleanup, including variadic members.
+        var convention =
+                function.isVarargs()
+                        ? FunctionContainer.CallingConvention.CDECL
+                        : function.getCallingConvention();
+        return "SDK_" + convention.name() + " ";
+    }
+
     private static void appendFunctionPointerSignature(
             StringBuilder s,
             FunctionContainer function,
             String ownerName,
             boolean includeOwnerParameter) {
-        s.append(formatTypeContainer(function.getReturnType())).append(" (*)(");
+        s.append(formatTypeContainer(function.getReturnType()))
+                .append(" (")
+                .append(callingConvention(function))
+                .append("*)(");
         int parameterCount = 0;
         if (includeOwnerParameter) {
             s.append(ownerName).append("*");

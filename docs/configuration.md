@@ -181,6 +181,14 @@ priority during inherited declaration propagation.
 `generatedFor` to `SDK`, and `importerCategory` to `/SymbolWeave`. The generic runtime header is bundled. Optional project support headers or trees
 are copied in list order before generated headers are written.
 
+`ignoreX86CallingConventions` defaults to `false`. Generated declarations and native
+function-pointer types preserve `CDECL`, `STDCALL`, `THISCALL`, and `FASTCALL` through
+portable `SDK_*` macros. These macros expand to the corresponding convention on x86
+and to nothing on other architectures. Variadic functions use `CDECL`.
+Set `"ignoreX86CallingConventions": true` under `outputs` to omit these annotations
+entirely when generating headers exclusively for a 64-bit target. This leaves receiver
+arguments and the calling-convention metadata in XML unchanged.
+
 `pdbModule` optionally overrides the PDB module name (otherwise the executable stem).
 `signatureLabel` optionally overrides the executable label in signature diagnostics
 (otherwise the executable filename). Neither setting contains a built-in game name.

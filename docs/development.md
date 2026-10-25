@@ -38,6 +38,14 @@ compile only application code and the launcher. The tests use both source sets.
 The regression tests cover configuration discovery/validation, path resolution, XML
 field presence, merge precedence, inheritance, matching ambiguity, custom map dialects,
 external plugin discovery, generated members/functions/vtables, and signature decoding.
+`SDKWriterCallingConventionTest` also accepts an output directory and writes `annotated/`
+and `ignored/` C++ fixtures. Compile `src/test/cpp/SDKWriterCallingConventionTest.cpp`
+with either directory on the include path. Run the annotated fixture with both x86
+and x64 compilers; for the ignored fixture, use x64 and define
+`SDK_TEST_IGNORE_CONVENTIONS`. The native test checks declaration/pointer types and
+calls native functions and virtual entries for every supported convention. With MSVC,
+`/Od /RTC1` also checks for stack corruption; `/Gz` exercises a non-cdecl default.
+
 They create synthetic fixtures in temporary directories. No executable, symbol map,
 analysis project, or generated SDK is checked in.
 
